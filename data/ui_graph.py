@@ -10,20 +10,29 @@ class Interaction(Data, Graph):
         Graph.__init__(self)
         Data.__init__(self, conf, training, test)
 
+        # self.user, self.item -> user to id, item to id
         self.user = {}
         self.item = {}
         self.id2user = {}
         self.id2item = {}
+        # user to item
         self.training_set_u = defaultdict(dict)
+        # item to user
         self.training_set_i = defaultdict(dict)
+        # self.test_set -> user to item
         self.test_set = defaultdict(dict)
         self.test_set_item = set()
 
         self.__generate_set()
         self.user_num = len(self.training_set_u)
         self.item_num = len(self.training_set_i)
+        # 실제 user id, item id간 연결 정보가 담긴 희소 행렬
+        # ((user_num + item_num), (user_num + item_num))
         self.ui_adj = self.__create_sparse_bipartite_adjacency()
+        # 정규화 된 인접행렬
         self.norm_adj = self.normalize_graph_mat(self.ui_adj)
+        # 실제 user id, item id간 연결 정보가 담긴 희소 행렬
+        # (user_num, item_num)
         self.interaction_mat = self.__create_sparse_interaction_matrix()
 
     def __generate_set(self):
@@ -46,6 +55,7 @@ class Interaction(Data, Graph):
 
     def __create_sparse_bipartite_adjacency(self, self_connection=False):
         n_nodes = self.user_num + self.item_num
+        # user/item id가 담긴 배열
         user_np = np.array([self.user[pair[0]] for pair in self.training_data])
         item_np = np.array([self.item[pair[1]] for pair in self.training_data]) + self.user_num
         ratings = np.ones_like(user_np, dtype=np.float32)

@@ -2,6 +2,7 @@ from data.loader import FileIO
 
 
 class SELFRec(object):
+    # .yaml 파일에서 모델에 대한 데이터 load
     def __init__(self, config):
         self.social_data = []
         self.feature_data = []
@@ -22,4 +23,5 @@ class SELFRec(object):
         import_str = f"from model.{self.config['model']['type']}.{self.config['model']['name']} import {self.config['model']['name']}"
         exec(import_str)
         recommender = f"{self.config['model']['name']}(self.config,self.training_data,self.test_data,**self.kwargs)"
+        # model 초기화
         eval(recommender).execute()

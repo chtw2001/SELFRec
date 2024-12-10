@@ -22,6 +22,7 @@ class ModelConf(object):
             raise IOError
         with open(file, 'r') as f:
             try:
+                # self.config를 dictionary로 사용가능
                 self.config = yaml.safe_load(f)
             except yaml.YAMLError as exc:
                 print(f"Error in configuration file: {exc}")

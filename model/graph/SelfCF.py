@@ -18,15 +18,20 @@ class SelfCF(GraphRecommender):
         self.n_layers = int(args['n_layer'])
         self.model = SelfCF_HE(self.data, self.emb_size, self.momentum, self.n_layers)
 
+# ----------------------------
     def train(self):
         model = self.model.cuda()
         optimizer = torch.optim.Adam(model.parameters(), lr=self.lRate)
         for epoch in range(self.maxEpoch):
             for n, batch in enumerate(next_batch_pairwise(self.data, self.batch_size)):
+                # user, positive, negative
+                # (batch_size, 1)
                 user_idx, i_idx, j_idx = batch
                 inputs = {'user': user_idx, 'item': i_idx}
                 model.train()
                 output = model(inputs)
+                # 이전에 자신이 출력한 값과 비슷해지도록 학습이 됨
+                # 이게 맞는건지 잘 모르겠네???
                 batch_loss = model.get_loss(output)
                 # Backward and optimize
                 optimizer.zero_grad()
@@ -43,6 +48,8 @@ class SelfCF(GraphRecommender):
 
     def predict(self, u):
         u = self.data.get_user_id(u)
+        # 선형 변환 한 임베딩과 raw임베딩을 결합
+        # 반대로도 결합하여 더해서 예측 선호호도 점수 출력
         score_ui = torch.matmul(self.p_u_online[u], self.i_online.transpose(0, 1))
         score_iu = torch.matmul(self.u_online[u], self.p_i_online.transpose(0, 1))
         score = score_ui + score_iu
@@ -57,11 +64,16 @@ class SelfCF_HE(nn.Module):
         self.latent_size = emb_size
         self.momentum = momentum
         self.online_encoder = LGCN_Encoder(data, emb_size, n_layers)
+        # 굳이 선형 변환을 추가하는 이유는?
         self.predictor = nn.Linear(self.latent_size, self.latent_size)
+        # u_target_his -> user target history 
+        # 과거 임베딩 초기화
         self.u_target_his = torch.randn((self.user_count, self.latent_size), requires_grad=False).cuda()
         self.i_target_his = torch.randn((self.item_count, self.latent_size), requires_grad=False).cuda()
 
+    # inputs = {'user': user_idx, 'item': i_idx}
     def forward(self, inputs):
+        # 학습 된 가중치로 계산된 임베딩 -> user/item embedding
         u_online, i_online = self.online_encoder()
         with torch.no_grad():
             users, items = inputs['user'], inputs['item']

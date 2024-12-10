@@ -31,6 +31,7 @@ class Recommender:
         self.model_log.add('### model configuration ###')
         config_items = self.config.config
         for k in config_items:
+            # 로그에 모델 configuration 추가
             self.model_log.add(f"{k}={str(config_items[k])}")
 
     def print_model_info(self):
@@ -71,6 +72,7 @@ class Recommender:
         pass
 
     def execute(self):
+        # 로그 생성, 모델 config(하이퍼파라미터) 출력
         self.initializing_log()
         self.print_model_info()
         print('Initializing and building model...')

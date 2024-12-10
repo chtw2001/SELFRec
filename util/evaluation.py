@@ -11,6 +11,7 @@ class Metric(object):
         for user in origin:
             items = list(origin[user].keys())
             predicted = [item[0] for item in res[user]]
+            # 두 set자료형 간 교차점 개수
             hit_count[user] = len(set(items).intersection(set(predicted)))
         return hit_count
 

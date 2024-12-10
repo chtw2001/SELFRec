@@ -44,10 +44,15 @@ class GraphRecommender(Recommender):
         rec_list = {}
         user_count = len(self.data.test_set)
         for i, user in enumerate(self.data.test_set):
+            # 선호도 점수
             candidates = self.predict(user)
+            # key: item, value: rating(1) -> list(self.training_set_u[u].keys())
             rated_list, _ = self.data.user_rated(user)
             for item in rated_list:
+                # 학습 때 관계가 있던 데이터는 작은 값으로 세팅
+                # item id
                 candidates[self.data.item[item]] = -10e8
+            # max_N만큼 선호도가 큰 아이템의 id, 선호도
             ids, scores = find_k_largest(self.max_N, candidates)
             item_names = [self.data.id2item[iid] for iid in ids]
             rec_list[user] = list(zip(item_names, scores))
@@ -80,7 +85,9 @@ class GraphRecommender(Recommender):
 
     def fast_evaluation(self, epoch):
         print('Evaluating the model...')
+        # dictionary. key: user, value: max_N 개의 (item, 선호도 점수) 리스트
         rec_list = self.test()
+        # hit ratio, precision, recall, NDCG
         measure = ranking_evaluation(self.data.test_set, rec_list, [self.max_N])
 
         performance = {k: float(v) for m in measure[1:] for k, v in [m.strip().split(':')]}

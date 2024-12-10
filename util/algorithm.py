@@ -149,6 +149,7 @@ def find_k_largest(K, candidates):
     heapq.heapify(n_candidates)
     for iid, score in enumerate(candidates[K:]):
         if score > n_candidates[0][0]:
+            # pop smallest value, push new value
             heapq.heapreplace(n_candidates, (score, iid + K))
     n_candidates.sort(key=lambda d: d[0], reverse=True)
     ids = [item[1] for item in n_candidates]

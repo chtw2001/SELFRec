@@ -3,6 +3,7 @@ import os
 
 
 class Log(object):
+    # 모델이름/모델이름 시간
     def __init__(self,module,filename):
         self.logger = logging.getLogger(module)
         self.logger.setLevel(level=logging.INFO)

@@ -14,6 +14,7 @@ class Graph(object):
             d_inv = np.power(rowsum, -0.5).flatten()
             d_inv[np.isinf(d_inv)] = 0.
             d_mat_inv = sp.diags(d_inv)
+            # 대칭 정규화
             norm_adj_tmp = d_mat_inv.dot(adj_mat)
             norm_adj_mat = norm_adj_tmp.dot(d_mat_inv)
         else:

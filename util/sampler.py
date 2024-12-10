@@ -22,6 +22,7 @@ def next_batch_pairwise(data,batch_size,n_negs=1):
             u_idx.append(data.user[user])
             for m in range(n_negs):
                 neg_item = choice(item_list)
+                # user와 관계 없는 negative item이 나올 때까지
                 while neg_item in data.training_set_u[user]:
                     neg_item = choice(item_list)
                 j_idx.append(data.item[neg_item])
