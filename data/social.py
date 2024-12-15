@@ -4,6 +4,8 @@ import numpy as np
 import scipy.sparse as sp
 
 
+# social.data가 있는 모델만 사용
+# MHCN, SEPT
 class Relation(Graph):
     def __init__(self, conf, relation, user):
         super().__init__()

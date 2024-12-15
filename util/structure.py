@@ -18,6 +18,7 @@ class PointWiseFeedForward(torch.nn.Module):
         )
 
     def forward(self, inputs):
+        # 잔차 연결을 하네?
         outputs = self.pwff(inputs)
         outputs += inputs
         return outputs

@@ -74,6 +74,7 @@ class SelfCF_HE(nn.Module):
     # inputs = {'user': user_idx, 'item': i_idx}
     def forward(self, inputs):
         # 학습 된 가중치로 계산된 임베딩 -> user/item embedding
+        # LightGCN으로 먼저 임베딩 결과 출력
         u_online, i_online = self.online_encoder()
         with torch.no_grad():
             users, items = inputs['user'], inputs['item']
@@ -86,6 +87,7 @@ class SelfCF_HE(nn.Module):
             #
             self.u_target_his[users, :] = u_online[users].clone()
             self.i_target_his[items, :] = i_online[items].clone()
+        # 현재 임베딩으로만 출력 후 선형 변환, 과거 값이랑 momentum 결합
         return self.predictor(u_online[users]), u_target, self.predictor(i_online[items]), i_target
 
     @torch.no_grad()
@@ -97,6 +99,9 @@ class SelfCF_HE(nn.Module):
         return 1 - F.cosine_similarity(p, z.detach(), dim=-1).mean()
 
     def get_loss(self, output):
+        # online: 현재 임베딩으로만 출력 후 선형 변환, 
+        # target: 과거 값이랑 momentum 결합
+        # 이게 모두 선호도 일 것이다.
         u_online, u_target, i_online, i_target = output
         loss_ui = self.loss_fn(u_online, i_target)/2
         loss_iu = self.loss_fn(i_online, u_target)/2

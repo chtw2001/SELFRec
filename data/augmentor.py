@@ -3,6 +3,7 @@ import random
 import scipy.sparse as sp
 from math import floor
 
+# SEPT, SGL 모델만 사용
 class GraphAugmentor(object):
     def __init__(self):
         pass
@@ -40,6 +41,7 @@ class GraphAugmentor(object):
         return dropped_adj
 
 
+# CL4SRec 모델만 사용
 class SequenceAugmentor(object):
     def __init__(self):
         pass

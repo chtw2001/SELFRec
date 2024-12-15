@@ -21,6 +21,7 @@ class Sequence(Data):
         seq_index = len(self.seq)
         item_index = len(self.item) + 1  # 0 as placeholder
 
+        # self.training_data -> {key: seq_id, value: items list}
         for seq in self.training_data:
             seq_data = self.training_data[seq]
             if len(seq_data) < 2:

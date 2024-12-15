@@ -33,6 +33,7 @@ class LightGCN(GraphRecommender):
                 self.user_emb, self.item_emb = model()
             if epoch % 5 == 0:
                 self.fast_evaluation(epoch)
+        # 평가 시 가장 좋은 모델을 save() 메서드로 업데이트
         self.user_emb, self.item_emb = self.best_user_emb, self.best_item_emb
 
 
@@ -68,6 +69,7 @@ class LGCN_Encoder(nn.Module):
     def forward(self):
         ego_embeddings = torch.cat([self.embedding_dict['user_emb'], self.embedding_dict['item_emb']], 0)
         all_embeddings = [ego_embeddings]
+        # layer 2개
         for k in range(self.layers):
             ego_embeddings = torch.sparse.mm(self.sparse_norm_adj, ego_embeddings)
             all_embeddings += [ego_embeddings]

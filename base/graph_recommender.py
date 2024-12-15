@@ -26,6 +26,8 @@ class GraphRecommender(Recommender):
               f'interaction number: {self.data.test_size()[2]})')
         print('=' * 80)
 
+    # social.data가 있는 모델들만 build() 메서드가 구현되어있음
+    # MHCN, SEPT
     def build(self):
         pass
 
@@ -50,28 +52,37 @@ class GraphRecommender(Recommender):
             rated_list, _ = self.data.user_rated(user)
             for item in rated_list:
                 # 학습 때 관계가 있던 데이터는 작은 값으로 세팅
+                # 데이터 상에서 user가 이미 rating 한 것.
                 # item id
                 candidates[self.data.item[item]] = -10e8
             # max_N만큼 선호도가 큰 아이템의 id, 선호도
             ids, scores = find_k_largest(self.max_N, candidates)
             item_names = [self.data.id2item[iid] for iid in ids]
+            # 실제 item id와 선호도 점수
             rec_list[user] = list(zip(item_names, scores))
             if i % 1000 == 0:
                 process_bar(i, user_count)
         process_bar(user_count, user_count)
         print('')
+        # max_N만큼 선호도가 큰 아이템, 선호도
+        # key: user, value: list(zip(item, score))
         return rec_list
 
     def evaluate(self, rec_list):
+        # rec_list -> max_N만큼 선호도가 큰 아이템, 선호도
+        # key: user, value: list(zip(item, score))
         self.recOutput.append('userId: recommendations in (itemId, ranking score) pairs, * means the item is hit.\n')
         for user in self.data.test_set:
             line = user + ':' + ''.join(
+                # (item, score)* -> hit
+                # (item, score)  -> miss
                 f" ({item[0]},{item[1]}){'*' if item[0] in self.data.test_set[user] else ''}"
                 for item in rec_list[user]
             )
             line += '\n'
             self.recOutput.append(line)
         current_time = strftime("%Y-%m-%d %H-%M-%S", localtime(time()))
+        # output: ./results/
         out_dir = self.output
         file_name = f"{self.config['model']['name']}@{current_time}-top-{self.max_N}items.txt"
         FileIO.write_file(out_dir, file_name, self.recOutput)
@@ -85,7 +96,7 @@ class GraphRecommender(Recommender):
 
     def fast_evaluation(self, epoch):
         print('Evaluating the model...')
-        # dictionary. key: user, value: max_N 개의 (item, 선호도 점수) 리스트
+        # dictionary. key: user(실제 item id), value: max_N 개의 (item, 선호도 점수) 리스트
         rec_list = self.test()
         # hit ratio, precision, recall, NDCG
         measure = ranking_evaluation(self.data.test_set, rec_list, [self.max_N])

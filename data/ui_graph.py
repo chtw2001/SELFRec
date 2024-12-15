@@ -55,7 +55,7 @@ class Interaction(Data, Graph):
 
     def __create_sparse_bipartite_adjacency(self, self_connection=False):
         n_nodes = self.user_num + self.item_num
-        # user/item id가 담긴 배열
+        # user/item 실제 id가 담긴 배열
         user_np = np.array([self.user[pair[0]] for pair in self.training_data])
         item_np = np.array([self.item[pair[1]] for pair in self.training_data]) + self.user_num
         ratings = np.ones_like(user_np, dtype=np.float32)

@@ -101,10 +101,10 @@ def next_batch_sequence(data, batch_size,n_negs=1,max_len=50):
         for n in range(0, batch_end-ptr):
             start = len(training_data[ptr + n]) > max_len and -max_len or 0
             end =  len(training_data[ptr + n]) > max_len and max_len-1 or len(training_data[ptr + n])-1
-            seq[n, :end] = training_data[ptr + n][start:-1]
+            seq[n, :end] = training_data[ptr + n][start:-1] # 끝에 1개 포함 x
             seq_len.append(end)
             pos[n, :end] = list(range(1,end+1))
-            y[n, :end]=training_data[ptr + n][start+1:]
+            y[n, :end]=training_data[ptr + n][start+1:] # 처음 1개 포함 x
             negatives=sample(item_list,end)
             while len(set(negatives).intersection(set(training_data[ptr + n][start:-1]))) >0:
                 negatives = sample(item_list, end)
@@ -121,14 +121,19 @@ def next_batch_sequence_for_test(data, batch_size,max_len=50):
             batch_end = ptr+batch_size
         else:
             batch_end = data_size
+        # shape -> (batch_size, max_len)
         seq = np.zeros((batch_end-ptr, max_len),dtype=int)
         pos = np.zeros((batch_end-ptr, max_len),dtype=int)
         seq_len = []
         for n in range(0, batch_end-ptr):
+            # max_len 넘기면 뒤에서 부터 50개
             start = len(sequences[ptr + n]) > max_len and -max_len or 0
             end =  len(sequences[ptr + n]) > max_len and max_len or len(sequences[ptr + n])
             seq[n, :end] = sequences[ptr + n][start:]
             seq_len.append(end)
             pos[n, :end] = list(range(1,end+1))
         ptr=batch_end
+        # seq -> sequence item list,
+        # pos -> sequence 개수 만큼 리스트 ex) 5 -> [1, 2, 3, 4, 5], 
+        # seq_len -> 배치 사이즈 별로 sequence 개수 
         yield seq, pos, np.array(seq_len,int)

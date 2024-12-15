@@ -39,10 +39,14 @@ class SequentialRecommender(Recommender):
 
         rec_list = {}
         for n, batch in enumerate(next_batch_sequence_for_test(self.data, self.batch_size, max_len=self.max_len)):
+            # seq -> sequence item list,
+            # pos -> sequence 개수 만큼 리스트 ex) 5 -> [1, 2, 3, 4, 5], 
+            # seq_len -> 배치 사이즈 별로 sequence 개수
             seq, pos, seq_len = batch
             seq_start = n * self.batch_size
             seq_end = (n + 1) * self.batch_size
             seq_names = [seq_full[0] for seq_full in self.data.original_seq[seq_start:seq_end]]
+            # 마지막 값 예측
             candidates = self.predict(seq, pos, seq_len)
             for name, res in zip(seq_names, candidates):
                 ids, scores = find_k_largest(self.max_N, res)
