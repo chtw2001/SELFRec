@@ -31,7 +31,7 @@ def batch_softmax_loss(user_emb, item_emb, temperature):
     loss = -torch.log(pos_score / ttl_score+10e-6)
     return torch.mean(loss)
 
-
+# Information Noise-Contrastive Estimation loss
 def InfoNCE(view1, view2, temperature: float, b_cos: bool = True):
     """
     Args:
@@ -45,7 +45,9 @@ def InfoNCE(view1, view2, temperature: float, b_cos: bool = True):
     if b_cos:
         view1, view2 = F.normalize(view1, dim=1), F.normalize(view2, dim=1)
 
+    # @ -> matmul. 내적으로 유사도 계산
     pos_score = (view1 @ view2.T) / temperature
+    # 얼마나 두 행렬이 닮아있는가?
     score = torch.diag(F.log_softmax(pos_score, dim=1))
     return -score.mean()
 

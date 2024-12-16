@@ -33,6 +33,7 @@ class GraphAugmentor(object):
         adj_shape = sp_adj.get_shape()
         edge_count = sp_adj.count_nonzero()
         row_idx, col_idx = sp_adj.nonzero()
+        # 0.9% 샘플링
         keep_idx = random.sample(range(edge_count), int(edge_count * (1 - drop_rate)))
         user_np = np.array(row_idx)[keep_idx]
         item_np = np.array(col_idx)[keep_idx]

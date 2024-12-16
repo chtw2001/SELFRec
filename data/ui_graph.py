@@ -67,7 +67,12 @@ class Interaction(Data, Graph):
 
     def convert_to_laplacian_mat(self, adj_mat):
         user_np_keep, item_np_keep = adj_mat.nonzero()
+        # csr_matrix.data -> CSR format data array of the matrix
         ratings_keep = adj_mat.data
+        # (user, item) 행렬을 ((user+item), (user+item)) 행렬로 확장
+        # interaction matrix -> 이분 그래프
+        # [user:][:]에는 모두 0이 들어가는데?
+        # user-item
         tmp_adj = sp.csr_matrix((ratings_keep, (user_np_keep, item_np_keep + adj_mat.shape[0])),
                                 shape=(adj_mat.shape[0] + adj_mat.shape[1], adj_mat.shape[0] + adj_mat.shape[1]),
                                 dtype=np.float32)

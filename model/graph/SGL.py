@@ -14,25 +14,29 @@ class SGL(GraphRecommender):
     def __init__(self, conf, training_set, test_set):
         super(SGL, self).__init__(conf, training_set, test_set)
         args = self.config['SGL']
-        self.cl_rate = float(args['lambda'])
-        aug_type = self.aug_type = int(args['aug_type'])
-        drop_rate = float(args['drop_rate'])
-        n_layers = int(args['n_layer'])
-        temp = float(args['temp'])
+        self.cl_rate = float(args['lambda']) # 0.1
+        aug_type = self.aug_type = int(args['aug_type']) # 1
+        drop_rate = float(args['drop_rate']) # 0.1
+        n_layers = int(args['n_layer']) # 2
+        temp = float(args['temp']) # 0.2
         self.model = SGL_Encoder(self.data, self.emb_size, drop_rate, n_layers, temp, aug_type)
 
     def train(self):
         model = self.model.cuda()
         optimizer = torch.optim.Adam(model.parameters(), lr=self.lRate)
         for epoch in range(self.maxEpoch):
+            # dropout 되며, 대칭성을 가진 이분 그래프가 만들어짐
             dropped_adj1 = model.graph_reconstruction()
             dropped_adj2 = model.graph_reconstruction()
             for n, batch in enumerate(next_batch_pairwise(self.data, self.batch_size)):
+                # user에 대한 idx, positive item의 idx, negative item의 idx
                 user_idx, pos_idx, neg_idx = batch
                 rec_user_emb, rec_item_emb = model()
                 user_emb, pos_item_emb, neg_item_emb = rec_user_emb[user_idx], rec_item_emb[pos_idx], rec_item_emb[neg_idx]
                 rec_loss = bpr_loss(user_emb, pos_item_emb, neg_item_emb)
+                # dropout을 적용했을 때는 두 결과 값이 얼마나 다른지? 일반화를 얼마나 잘하는지에 대한 것?
                 cl_loss = self.cl_rate * model.cal_cl_loss([user_idx,pos_idx],dropped_adj1,dropped_adj2)
+                # 원본 행렬로 구한 손실 + l2노름 규제항 + 일반화 오차 => 최종 손실
                 batch_loss =  rec_loss + l2_reg_loss(self.reg, user_emb, pos_item_emb,neg_item_emb) + cl_loss
                 # Backward and optimize
                 optimizer.zero_grad()
@@ -52,6 +56,7 @@ class SGL(GraphRecommender):
 
     def predict(self, u):
         u = self.data.get_user_id(u)
+        # 선호도 반환
         score = torch.matmul(self.user_emb[u], self.item_emb.transpose(0, 1))
         return score.cpu().numpy()
 
@@ -67,9 +72,11 @@ class SGL_Encoder(nn.Module):
         self.aug_type = aug_type
         self.norm_adj = data.norm_adj
         self.embedding_dict = self._init_model()
+        # Scipy sparse matrix -> Pythorch sparse matrix
         self.sparse_norm_adj = TorchGraphInterface.convert_sparse_mat_to_tensor(self.norm_adj).cuda()
 
     def _init_model(self):
+        # user/item embedding을 균등 분포로 초기화
         initializer = nn.init.xavier_uniform_
         embedding_dict = nn.ParameterDict({
             'user_emb': nn.Parameter(initializer(torch.empty(self.data.user_num, self.emb_size))),
@@ -78,6 +85,7 @@ class SGL_Encoder(nn.Module):
         return embedding_dict
 
     def graph_reconstruction(self):
+        # self.aug_type = 1
         if self.aug_type==0 or 1:
             dropped_adj = self.random_graph_augment()
         else:
@@ -91,7 +99,10 @@ class SGL_Encoder(nn.Module):
         if self.aug_type == 0:
             dropped_mat = GraphAugmentor.node_dropout(self.data.interaction_mat, self.drop_rate)
         elif self.aug_type == 1 or self.aug_type == 2:
+            # 1-self.drop_rate의 확률로 (user, item) interaction을 dropout
             dropped_mat = GraphAugmentor.edge_dropout(self.data.interaction_mat, self.drop_rate)
+        # (user, item) -> ((user+item), (user+item))
+        # 이분 그래프가 됨
         dropped_mat = self.data.convert_to_laplacian_mat(dropped_mat)
         return TorchGraphInterface.convert_sparse_mat_to_tensor(dropped_mat).cuda()
 
@@ -112,7 +123,10 @@ class SGL_Encoder(nn.Module):
         user_all_embeddings, item_all_embeddings = torch.split(all_embeddings, [self.data.user_num, self.data.item_num])
         return user_all_embeddings, item_all_embeddings
 
+    # perturbed -> 걱정스러운, 불안한, 불만스러운, 교란된
+    # contrastive loss
     def cal_cl_loss(self, idx, perturbed_mat1, perturbed_mat2):
+        # idx -> [user_idx, pos_idx]
         u_idx = torch.unique(torch.Tensor(idx[0]).type(torch.long)).cuda()
         i_idx = torch.unique(torch.Tensor(idx[1]).type(torch.long)).cuda()
         user_view_1, item_view_1 = self.forward(perturbed_mat1)
@@ -122,6 +136,8 @@ class SGL_Encoder(nn.Module):
         # user_cl_loss = InfoNCE(user_view_1[u_idx], user_view_2[u_idx], self.temp)
         # item_cl_loss = InfoNCE(item_view_1[i_idx], item_view_2[i_idx], self.temp)
         #return user_cl_loss + item_cl_loss
+        # self.temp = 0.2
+        # 얼만큼 두 행렬이 다른지 점수 반환
         return InfoNCE(view1,view2,self.temp)
 
 
