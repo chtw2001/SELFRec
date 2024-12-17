@@ -31,6 +31,7 @@ class SGL(GraphRecommender):
             for n, batch in enumerate(next_batch_pairwise(self.data, self.batch_size)):
                 # user에 대한 idx, positive item의 idx, negative item의 idx
                 user_idx, pos_idx, neg_idx = batch
+                # 원본 행렬과 embedding을 곱해서 나온 출력
                 rec_user_emb, rec_item_emb = model()
                 user_emb, pos_item_emb, neg_item_emb = rec_user_emb[user_idx], rec_item_emb[pos_idx], rec_item_emb[neg_idx]
                 rec_loss = bpr_loss(user_emb, pos_item_emb, neg_item_emb)
@@ -109,6 +110,7 @@ class SGL_Encoder(nn.Module):
     def forward(self, perturbed_adj=None):
         ego_embeddings = torch.cat([self.embedding_dict['user_emb'], self.embedding_dict['item_emb']], 0)
         all_embeddings = [ego_embeddings]
+        # 2 layers
         for k in range(self.n_layers):
             if perturbed_adj is not None:
                 if isinstance(perturbed_adj,list):
@@ -116,6 +118,7 @@ class SGL_Encoder(nn.Module):
                 else:
                     ego_embeddings = torch.sparse.mm(perturbed_adj, ego_embeddings)
             else:
+                # 원본 이분 그래프와 user/item embedding 행렬 곱
                 ego_embeddings = torch.sparse.mm(self.sparse_norm_adj, ego_embeddings)
             all_embeddings.append(ego_embeddings)
         all_embeddings = torch.stack(all_embeddings, dim=1)
@@ -137,7 +140,7 @@ class SGL_Encoder(nn.Module):
         # item_cl_loss = InfoNCE(item_view_1[i_idx], item_view_2[i_idx], self.temp)
         #return user_cl_loss + item_cl_loss
         # self.temp = 0.2
-        # 얼만큼 두 행렬이 다른지 점수 반환
+        # 두 행렬이 얼만큼 다른지 점수 반환
         return InfoNCE(view1,view2,self.temp)
 
 

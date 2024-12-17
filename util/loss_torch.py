@@ -4,8 +4,11 @@ import torch.nn as nn
 
 
 def bpr_loss(user_emb, pos_item_emb, neg_item_emb):
+    # dot product -> 선호도 출력
     pos_score = torch.mul(user_emb, pos_item_emb).sum(dim=1)
     neg_score = torch.mul(user_emb, neg_item_emb).sum(dim=1)
+    # 작은 값(10e-6)을 더해주는 이유는?
+    # log에 매우 작은 값이 들어가면 부동소수점 이슈 때문. 그 외에는 torch.LogSigmoid와 동일
     loss = -torch.log(10e-6 + torch.sigmoid(pos_score - neg_score))
     return torch.mean(loss)
 
